@@ -148,17 +148,23 @@ fileInput.addEventListener('change', (event) => {
         return;
     }
 
+    console.log('File name:', file.name, 'Type:', file.type); // Debug file info
+
     updateProgress(0);
     resultsDiv.innerHTML = '';
     analysisDiv.innerHTML = '';
 
-    if (file.type === 'text/plain') {
+    const extension = file.name.toLowerCase().split('.').pop();
+    const validText = file.type === 'text/plain' || extension === 'txt';
+    const validImage = ['image/png', 'image/jpeg', 'image/jpg'].includes(file.type) || ['png', 'jpg', 'jpeg'].includes(extension);
+
+    if (validText) {
         const reader = new FileReader();
         reader.onload = (e) => {
             countDigits(e.target.result);
         };
         reader.readAsText(file);
-    } else if (file.type === 'image/png' || file.type === 'image/jpeg') {
+    } else if (validImage) {
         Tesseract.recognize(
             file,
             'eng',
@@ -170,13 +176,14 @@ fileInput.addEventListener('change', (event) => {
                 }
             }
         ).then(({ data: { text } }) => {
+            console.log('OCR extracted text:', text); // Debug OCR output
             countDigits(text); // Process extracted text
         }).catch((err) => {
             alert('Error processing image: ' + err.message);
             updateProgress(0);
         });
     } else {
-        alert('Please upload a valid .txt, .png, or .jpg file.');
+        alert('Please upload a valid .txt, .png, or .jpg file. Detected type: ' + file.type + ', Extension: ' + extension);
     }
 });
 
