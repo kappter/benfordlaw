@@ -1,0 +1,219 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benford's Law Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        #upload-section {
+            margin-bottom: 20px;
+        }
+        #file-input {
+            margin: 10px;
+        }
+        #chart-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        #results {
+            margin-top: 20px;
+            text-align: left;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Benford's Law Analyzer</h1>
+    <div id="upload-section">
+        <label for="file-input">Upload a text file (.txt):</label>
+        <input type="file" id="file-input" accept=".txt">
+    </div>
+    <div id="chart-container">
+        <canvas id="benford-chart"></canvas>
+    </div>
+    <div id="results"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const resultsDiv = document.getElementById('results');
+        let chart;
+
+        // Initialize Chart.js
+        function initializeChart() {
+            const ctx = document.getElementById('benford-chart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+                    datasets: [{
+                        label: 'Count of First Digits',
+                        data: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Count'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'First Digit'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'First Digit Distribution'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Get first digit of a string token
+        function firstDigitOf(token) {
+            for (let ch of token) {
+                if (ch >= '1' && ch <= '9') {
+                    return parseInt(ch);
+                }
+            }
+            return 0;
+        }
+
+        // Count first digits in text
+        function countDigits(text) {
+            const count = new Array(10).fill(0);
+            const tokens = text.split(/\s+/);
+            let index = 0;
+
+            // Process tokens with animation
+            function processNextToken() {
+                if (index < tokens.length) {
+                    const token = tokens[index];
+                    const digit = firstDigitOf(token);
+                    count[digit]++;
+                    updateChart(count);
+                    updateResults(count);
+                    index++;
+                    setTimeout(processNextToken, 50); // Adjust delay for animation
+                }
+            }
+
+            processNextToken();
+            return count;
+        }
+
+        // Update chart with new counts
+        function updateChart(count) {
+            chart.data.datasets[0].data = count.slice(1); // Digits 1-9
+            chart.update();
+        }
+
+        // Update results table
+        function updateResults(count) {
+            const total = count.slice(1).reduce((sum, n) => sum + n, 0);
+            let html = '<h3>Results</h3>';
+            if (count[0] > 0) {
+                html += `<p>Excluding ${count[0]} tokens</p>`;
+            }
+            html += '<table><tr><th>Digit</th><th>Count</th><th>Percent</th></tr>';
+            for (let i = 1; i < count.length; i++) {
+                const percent = total > 0 ? (count[i] * 100 / total).toFixed(2) : 0;
+                html += `<tr><td>${i}</td><td>${count[i]}</td><td>${percent}%</td></tr>`;
+            }
+            html += `<tr><td>Total</td><td>${total}</td><td>100.00%</td></tr>`;
+            html += '</table>';
+            resultsDiv.innerHTML = html;
+        }
+
+        // Handle file upload
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file && file.type === 'text/plain') {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const text = e.target.result;
+                    countDigits(text);
+                };
+                reader.readAsText(file);
+            } else {
+                alert('Please upload a valid .txt file.');
+            }
+        });
+
+        // Initialize chart on page load
+        initializeChart();
+    </script>
+</body>
+</html>
