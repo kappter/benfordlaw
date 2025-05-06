@@ -74,7 +74,7 @@ function countDigits(text) {
             updateResults(count);
             updateProgress((index + 1) / tokens.length * 100);
             index++;
-            setTimeout(processNextToken, 10); // Faster animation for smoother progress
+            setTimeout(processNextToken, 10);
         } else {
             analyzeBenford(count);
         }
@@ -129,7 +129,6 @@ function analyzeBenford(count) {
         maxDeviation = Math.max(maxDeviation, deviation);
     }
 
-    // Threshold: If max deviation > 5%, flag as suspicious
     const threshold = 5;
     let result;
     if (maxDeviation > threshold) {
@@ -144,17 +143,40 @@ function analyzeBenford(count) {
 // Handle file upload
 fileInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
-    if (file && file.type === 'text/plain') {
+    if (!file) {
+        alert('No file selected.');
+        return;
+    }
+
+    updateProgress(0);
+    resultsDiv.innerHTML = '';
+    analysisDiv.innerHTML = '';
+
+    if (file.type === 'text/plain') {
         const reader = new FileReader();
         reader.onload = (e) => {
-            updateProgress(0);
-            resultsDiv.innerHTML = '';
-            analysisDiv.innerHTML = '';
             countDigits(e.target.result);
         };
         reader.readAsText(file);
+    } else if (file.type === 'image/png' || file.type === 'image/jpeg') {
+        Tesseract.recognize(
+            file,
+            'eng',
+            {
+                logger: (m) => {
+                    if (m.status === 'recognizing text') {
+                        updateProgress(m.progress * 50); // OCR progress (0-50%)
+                    }
+                }
+            }
+        ).then(({ data: { text } }) => {
+            countDigits(text); // Process extracted text
+        }).catch((err) => {
+            alert('Error processing image: ' + err.message);
+            updateProgress(0);
+        });
     } else {
-        alert('Please upload a valid .txt file.');
+        alert('Please upload a valid .txt, .png, or .jpg file.');
     }
 });
 

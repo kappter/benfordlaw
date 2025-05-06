@@ -48,8 +48,8 @@
 <body>
     <h1>Benford's Law Analyzer</h1>
     <div id="upload-section">
-        <label for="file-input">Upload a text file (.txt):</label>
-        <input type="file" id="file-input" accept=".txt">
+        <label for="file-input">Upload a text file (.txt) or image (.png, .jpg):</label>
+        <input type="file" id="file-input" accept=".txt,image/png,image/jpeg">
     </div>
     <div id="progress-section">
         <p>Progress: <span id="progress">0%</span></p>
@@ -64,6 +64,7 @@
     <div id="analysis"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
