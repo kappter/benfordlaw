@@ -76,6 +76,30 @@ function isBenfordCompliant(numbers) {
     return min > 0 && max / min > 100;
 }
 
+// Extract pixel RGB values
+function extractPixelValues(file, callback) {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
+        const numbers = [];
+        for (let i = 0; i < imageData.length; i += 4) {
+            const r = imageData[i];
+            const g = imageData[i + 1];
+            const b = imageData[i + 2];
+            if (r > 0) numbers.push(r);
+            if (g > 0) numbers.push(g);
+            if (b > 0) numbers.push(b);
+        }
+        callback(numbers);
+    };
+}
+
 // Count first digits with throttled updates
 function countDigits(numbers) {
     const count = new Array(10).fill(0);
@@ -137,15 +161,19 @@ function updateProgress(percentage) {
 function analyzeBenford(count, numbers) {
     const total = count.slice(1).reduce((sum, n) => sum + n, 0);
     let html = '<h3>Benford\'s Law Analysis</h3>';
+    const mode = document.getElementById('analysis-mode').value;
 
     if (total < 100) {
-        html += '<p>Insufficient numbers for analysis (need at least 100 valid numbers). For text analysis, check image quality or try a different file. For raw image analysis, ensure the image is a JPEG.</p>';
+        html += `<p>Insufficient numbers for analysis (need at least 100 valid numbers). For text analysis, check image quality or try a different file. For raw image analysis, ensure the image is a JPEG. For pixel analysis, try a different image.</p>`;
         analysisDiv.innerHTML = html;
         return;
     }
 
     if (!isBenfordCompliant(numbers)) {
-        html += '<p>Warning: The numbers may not be suitable for Benford’s Law (e.g., too uniform or constrained). Results may be unreliable.</p>';
+        html += `<p>Warning: The numbers may not be suitable for Benford’s Law (e.g., too uniform or constrained). Results may be unreliable.</p>`;
+        if (mode === 'pixel') {
+            html += `<p>Note: Pixel value analysis is experimental. Pixel RGB values (0–255) may not follow Benford’s Law in natural images, and deviations may reflect content rather than manipulation.</p>`;
+        }
         analysisDiv.innerHTML = html;
         return;
     }
@@ -160,9 +188,25 @@ function analyzeBenford(count, numbers) {
     const pValue = 1 - jStat.chisquare.cdf(chiSquare, 8);
     let result;
     if (pValue < 0.05) {
-        result = `<p class="suspicious">Potential Anomaly: The first-digit distribution deviates significantly from Benford’s Law (chi-squared p-value: ${pValue.toFixed(4)}). For text analysis, this may suggest data manipulation, but could result from OCR errors. For raw image analysis, this may indicate a synthetic image. Verify the image and consider further forensic analysis (see <a href="#help">Help</a>).</p>`;
+        result = `<p class="suspicious">Potential Anomaly: The first-digit distribution deviates significantly from Benford’s Law (chi-squared p-value: ${pValue.toFixed(4)}). `;
+        if (mode === 'text') {
+            result += `This may suggest data manipulation, but could result from OCR errors. `;
+        } else if (mode === 'raw') {
+            result += `This may indicate a synthetic image. `;
+        } else if (mode === 'pixel') {
+            result += `This may indicate unusual pixel distributions, but pixel values may not reliably follow Benford’s Law. `;
+        }
+        result += `Verify the image and consider further forensic analysis (see <a href="#help">Help</a>).</p>`;
     } else {
-        result = `<p class="normal">Consistent with Benford’s Law: The first-digit distribution aligns with expected patterns (chi-squared p-value: ${pValue.toFixed(4)}). This suggests natural data, but does not guarantee authenticity. For critical cases, perform additional checks (see <a href="#help">Help</a>).</p>`;
+        result = `<p class="normal">Consistent with Benford’s Law: The first-digit distribution aligns with expected patterns (chi-squared p-value: ${pValue.toFixed(4)}). `;
+        if (mode === 'text') {
+            result += `This suggests natural data, but does not guarantee authenticity. `;
+        } else if (mode === 'raw') {
+            result += `This suggests a natural image, but does not guarantee authenticity. `;
+        } else if (mode === 'pixel') {
+            result += `This suggests typical pixel distributions, but pixel analysis is experimental and may not indicate authenticity. `;
+        }
+        result += `For critical cases, perform additional checks (see <a href="#help">Help</a>).</p>`;
     }
 
     analysisDiv.innerHTML = html + result;
@@ -270,6 +314,15 @@ fileInput.addEventListener('change', (event) => {
             extractDCTCoefficients(file, (numbers) => {
                 if (numbers.length === 0) {
                     alert('Unable to extract DCT coefficients. Try a different JPEG or use server-side analysis (see README).');
+                    return;
+                }
+                updateProgress(50);
+                countDigits(numbers);
+            });
+        } else if (analysisMode === 'pixel') {
+            extractPixelValues(file, (numbers) => {
+                if (numbers.length === 0) {
+                    alert('No valid pixel values extracted. Try a different image.');
                     return;
                 }
                 updateProgress(50);
