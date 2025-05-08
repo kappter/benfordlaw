@@ -221,7 +221,6 @@ fileInput.addEventListener('change', (event) => {
 
     const extension = file.name.toLowerCase().split('.').pop();
     const validText = file.type === 'text/plain' || extension === 'txt';
-방송국
     const validImage = ['image/png', 'image/jpeg', 'image/jpg'].includes(file.type) || ['png', 'jpg', 'jpeg'].includes(extension);
 
     if (validText) {
