@@ -2,7 +2,7 @@ body {
     font-family: Arial, sans-serif;
     max-width: 800px;
     margin: 0 auto;
-    padding: 20px 20px 60px; /* Added bottom padding for footer */
+    padding: 20px 20px 60px;
     text-align: center;
 }
 
@@ -14,7 +14,7 @@ h1 {
     margin-bottom: 20px;
 }
 
-#file-input {
+#analysis-mode, #file-input {
     margin: 10px;
 }
 
@@ -41,7 +41,7 @@ h1 {
     margin: 0 auto;
 }
 
-#results, #analysis {
+#results, #analysis, #help {
     margin-top: 20px;
     text-align: left;
 }
@@ -73,6 +73,15 @@ th {
 
 #analysis .normal {
     color: #388e3c;
+}
+
+#help a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+#help a:hover {
+    text-decoration: underline;
 }
 
 footer {

@@ -48,6 +48,12 @@
 <body>
     <h1>Benford's Law Analyzer</h1>
     <div id="upload-section">
+        <label for="analysis-mode">Analysis Mode:</label>
+        <select id="analysis-mode">
+            <option value="text">Text (OCR from Images)</option>
+            <option value="raw">Raw Image (DCT Coefficients, JPEG only)</option>
+        </select>
+        <br>
         <label for="file-input">Upload a text file (.txt) or image (.png, .jpg):</label>
         <input type="file" id="file-input" accept=".txt,image/png,image/jpeg,image/jpg">
     </div>
@@ -62,6 +68,10 @@
         <canvas id="benford-chart"></canvas>
     </div>
     <div id="results"></div>
+    <div id="help">
+        <h3>Help</h3>
+        <p>Learn how to interpret results and what to do if anomalies are detected in the <a href="https://github.com/kappter/benfordlaw#what-to-do-if-you-suspect-image-manipulation" target="_blank">README</a>.</p>
+    </div>
     <footer>
         <p>&copy; 2025 Ken Kapptie. All rights reserved.</p>
         <nav>
@@ -74,6 +84,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/opencv.js@1.2.1/opencv.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jstat@1.9.5/dist/jstat.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jpeg-js@0.4.4/lib/decoder.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

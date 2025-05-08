@@ -1,11 +1,14 @@
 # Benford's Law Analyzer Web App
 
 ## Overview
-This web application allows users to analyze text files (`.txt`) or images (`.png`, `.jpg`) containing numbers to check if the distribution of first digits (1-9) follows **Benford's Law**. It provides a live tally of first digits in a bar chart, a progress bar, and a final analysis to detect potential anomalies, which could indicate data manipulation or fraud. The app uses Tesseract.js for Optical Character Recognition (OCR) to extract text from images, making it versatile for analyzing scanned documents or screenshots.
+This web application analyzes text files (`.txt`) or images (`.png`, `.jpg`) to check if the distribution of first digits (1-9) follows **Benford's Law**, which can indicate data authenticity or potential manipulation. It supports two modes:
+- **Text Analysis**: Uses Optical Character Recognition (OCR) via Tesseract.js to extract numbers from images (e.g., receipts, invoices) or processes text files directly.
+- **Raw Image Analysis**: Extracts Discrete Cosine Transform (DCT) coefficients from JPEG images to detect synthetic images (e.g., GAN-generated). Client-side analysis is limited; server-side processing is recommended for robust results.
+
+The app provides a live bar chart (via Chart.js), a progress bar, a results table, and a statistical analysis using a chi-squared test to detect anomalies, which could suggest data manipulation or synthetic images.
 
 ## What is Benford's Law?
-Benford's Law, also known as the First-Digit Law, states that in many naturally occurring datasets (e.g., financial records, population numbers, scientific data), the leading digits of numbers are not uniformly distributed. Instead, smaller digits (especially 1) appear more frequently than larger ones. The expected probabilities for first digits 1-9 are approximately:
-
+Benford's Law states that in many naturally occurring datasets (e.g., financial records, image DCT coefficients), the leading digits of numbers follow a non-uniform distribution:
 - 1: 30.1%
 - 2: 17.6%
 - 3: 12.5%
@@ -16,99 +19,127 @@ Benford's Law, also known as the First-Digit Law, states that in many naturally 
 - 8: 5.1%
 - 9: 4.6%
 
-This counterintuitive distribution applies to datasets that span multiple orders of magnitude and are not artificially constrained (e.g., not sequential numbers or fixed-length codes). Deviations from Benford's Law can suggest data manipulation, such as fraud in financial records or tampering in images containing numerical data.
+This applies to datasets spanning multiple orders of magnitude (e.g., stock prices, river lengths) but not artificial data (e.g., sequential numbers, fixed-length codes). Deviations can indicate manipulation, such as fraud in documents or synthetic images.
 
 ## App Features
-- **File Upload**: Upload a `.txt` file or an image (`.png`, `.jpg`) containing numbers.
-- **OCR for Images**: Uses Tesseract.js to extract text from images, enabling analysis of scanned documents or screenshots.
-- **Live Tally**: Displays a bar chart (via Chart.js) that updates in real-time as first digits (1-9) are counted.
-- **Progress Bar**: Shows the percentage of the file processed (0-100% for text files, 0-50% for OCR and 50-100% for digit counting in images).
-- **Results Table**: Lists the count and percentage of each first digit, excluding invalid tokens (e.g., non-numeric strings).
-- **Benford's Law Analysis**: Compares the observed first-digit distribution to Benford's Law expected percentages. If the maximum deviation exceeds 5%, the distribution is flagged as suspicious, indicating potential anomalies.
-- **User-Friendly Interface**: Simple design with clear instructions and responsive layout.
+- **File Upload**: Upload `.txt` files or images (`.png`, `.jpg`).
+- **Analysis Modes**:
+  - Text: Extracts numbers via OCR (images) or directly (text files).
+  - Raw Image: Analyzes DCT coefficients from JPEGs (client-side limited; server-side recommended).
+- **OCR Enhancements**: Preprocesses images with OpenCV.js for better Tesseract.js accuracy.
+- **Live Tally**: Updates a bar chart in real-time as first digits are counted.
+- **Progress Bar**: Shows processing progress (0-100% for text, 0-50% for OCR, 50-100% for counting).
+- **Results Table**: Displays digit counts and percentages, excluding invalid numbers.
+- **Statistical Analysis**: Uses a chi-squared test to compare the first-digit distribution to Benford’s Law. A p-value < 0.05 flags potential anomalies.
+- **Dataset Validation**: Checks if numbers are suitable for Benford’s Law (e.g., span multiple orders of magnitude).
+- **User Guidance**: Includes a help section linking to advice on handling anomalies.
+- **Responsive Design**: User-friendly interface with clear feedback.
 
 ## What to Do If You Suspect Image Manipulation
-If the app flags a "Suspicion Detected" result (i.e., the first-digit distribution deviates significantly from Benford's Law), it may indicate that the numbers in the image or text file have been manipulated. Here’s what you can do:
+If the app flags a “Potential Anomaly” (p-value < 0.05), it may indicate manipulation. Follow these steps:
 
 1. **Verify the Input**:
-   - For images, ensure the text is clear, high-contrast, and preferably typed (not handwritten), as OCR errors can affect results. Low-quality images or complex backgrounds may lead to inaccurate text extraction.
-   - Re-upload the image or try a different image of the same document to confirm consistency.
-   - Check the console logs (in your browser’s Developer Tools) for the OCR-extracted text (`OCR extracted text: ...`) to verify what was processed.
-
+   - **Text Analysis**: Ensure the image is high-contrast and typed (not handwritten). Check the console for OCR-extracted text (`OCR extracted text: ...`) to verify accuracy. Re-upload or try a clearer image.
+   - **Raw Image Analysis**: Ensure the image is a JPEG. Client-side DCT analysis is limited; use the server-side API for better results.
 2. **Compare with Original Data**:
-   - If possible, obtain the original dataset (e.g., a raw text file or another copy of the document) and analyze it with the app. Compare the results to see if the image’s distribution differs significantly.
-   - Look for signs of tampering, such as inconsistent fonts, irregular spacing, or pixel artifacts in the image, which may suggest numbers were edited.
-
+   - Obtain the original dataset (e.g., raw text file, another image copy) and re-analyze. Compare results for consistency.
+   - Look for tampering signs (e.g., inconsistent fonts, pixel artifacts).
 3. **Test Multiple Samples**:
-   - Analyze other images or files from the same source to establish a pattern. If multiple samples consistently deviate from Benford’s Law, it strengthens the case for potential manipulation.
-   - For example, if analyzing financial records, compare invoices or receipts from different periods.
-
+   - Analyze other files from the same source. Consistent deviations strengthen suspicion.
 4. **Investigate Context**:
-   - Consider why the data might deviate. Natural datasets (e.g., stock prices, river lengths) often follow Benford’s Law, but artificial ones (e.g., fixed-length codes, sequential numbers) may not. Ensure the dataset is expected to conform to Benford’s Law.
-   - Investigate the source of the image. Was it provided by a trusted party? Could it have been altered before being shared?
-
+   - Ensure the dataset is Benford-compliant (spans multiple orders of magnitude). Unsuitable data (e.g., fixed-length codes) may cause false positives.
+   - Verify the source’s trustworthiness.
 5. **Further Analysis**:
-   - Use image forensics tools (e.g., FotoForensics or Forensically) to check for signs of digital manipulation, such as inconsistent noise patterns or metadata anomalies.
-   - Consult a data analyst or forensic accountant if the data is critical (e.g., financial records) to perform a deeper statistical analysis, such as a chi-squared test.
-
+   - Use forensic tools (e.g., FotoForensics, Forensically) for image manipulation checks.
+   - For critical data, consult a forensic accountant or data analyst for deeper statistical tests (e.g., Z-statistics).
 6. **Report Findings**:
-   - If you suspect fraud or manipulation, document the app’s results (e.g., screenshot the chart and analysis) and share them with relevant stakeholders (e.g., auditors, supervisors).
-   - Note that the app’s analysis is a preliminary indicator, not definitive proof. Use it as a starting point for further investigation.
+   - Document results (e.g., screenshot the chart and analysis) and share with stakeholders.
+   - Note that this app provides preliminary indicators, not definitive proof.
 
 ## Getting Started
 ### Prerequisites
 - A modern web browser (e.g., Chrome, Firefox, Edge).
-- No server setup is required, as the app runs entirely in the browser using client-side JavaScript.
+- For raw image analysis, server-side processing requires Python, Flask, and `scipy` (see Server-Side Setup).
 
 ### Installation
-1. Clone or download the repository containing the following files:
+1. Clone or download the repository:
    - `index.html`
    - `styles.css`
    - `script.js`
-2. Place all files in the same directory.
-3. Open `index.html` in a web browser.
+2. Place files in the same directory.
+3. Open `index.html` in a browser.
+
+### Server-Side Setup (Optional, for Raw Image Analysis)
+For robust DCT analysis, set up a Python Flask API:
+```python
+from flask import Flask, request
+from PIL import Image
+import scipy.fftpack
+import numpy as np
+import io
+
+app = Flask(__name__)
+
+@app.route('/analyze_dct', methods=['POST'])
+def analyze_dct():
+    file = request.files['image']
+    img = Image.open(file).convert('L')
+    img_array = np.array(img)
+    dct = scipy.fftpack.dct(scipy.fftpack.dct(img_array.T, norm='ortho').T, norm='ortho')
+    coefficients = dct.flatten()
+    numbers = [abs(c) for c in coefficients if abs(c) > 0]
+    return {'numbers': numbers[:1000]}  # Limit for performance
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+Install dependencies:
+```bash
+pip install flask pillow scipy numpy
+```
+Run the server and update `script.js` to call the API (e.g., `fetch('http://localhost:5000/analyze_dct')`).
 
 ### Usage
-1. **Upload a File**:
-   - Click the file input to upload a `.txt` file or an image (`.png`, `.jpg`).
-   - For text files, include numbers separated by spaces (e.g., "123 456 789 9abc").
-   - For images, ensure the text is clear and legible for accurate OCR.
-
-2. **Monitor Progress**:
-   - Watch the progress bar as the file is processed (text files: 0-100%; images: 0-50% for OCR, 50-100% for digit counting).
-   - The bar chart updates in real-time as first digits are tallied.
-
-3. **Review Results**:
-   - The results table shows the count and percentage of each first digit (1-9).
-   - Invalid tokens (e.g., non-numeric strings) are excluded and reported.
-
-4. **Check Benford’s Law Analysis**:
-   - The analysis section indicates whether the distribution aligns with Benford’s Law (“Normal”) or is suspicious (“Suspicion Detected”).
-   - A maximum deviation >5% triggers a suspicious result.
+1. **Select Analysis Mode**:
+   - Choose “Text (OCR from Images)” for documents or “Raw Image (DCT Coefficients)” for JPEGs.
+2. **Upload a File**:
+   - Text files: Numbers separated by spaces (e.g., “123 456 789”).
+   - Images: Clear, typed text for OCR or JPEG for DCT.
+3. **Monitor Progress**:
+   - Text files: 0-100%.
+   - Images (Text): 0-50% for OCR, 50-100% for counting.
+   - Images (Raw): 0-50% for DCT extraction, 50-100% for counting.
+4. **Review Results**:
+   - Results table shows digit counts and percentages.
+   - Analysis indicates if the distribution is consistent (p-value ≥ 0.05) or anomalous (p-value < 0.05).
+5. **Check Help**:
+   - Refer to the help section for guidance on anomalies.
 
 ### Testing
-- **Text File**: Create a `.txt` file with numbers (e.g., "123 45 678 9abc 234") and upload it. Verify that the chart and analysis match the expected distribution.
-- **Image**: Use an image with clear, typed numbers (e.g., a screenshot of a spreadsheet or a scanned receipt). Check the console for the OCR-extracted text to ensure accuracy.
-- **Edge Cases**: Test with an empty file, a non-numeric image, or a low-quality image to confirm error handling.
+- **Text File**: Upload a `.txt` with numbers (e.g., “123 45 678”). Verify chart and p-value.
+- **Image (Text)**: Use a clear image of numbers (e.g., a receipt). Check console for OCR text.
+- **Image (Raw)**: Upload a JPEG. Test with real vs. GAN-generated images if using server-side API.
+- **Edge Cases**: Test empty files, non-numeric images, or low-quality JPEGs.
 
 ## Limitations
-- **OCR Accuracy**: Tesseract.js may struggle with handwritten text, low-resolution images, or complex layouts. For best results, use high-contrast, typed text.
-- **Statistical Test**: The app uses a simple 5% deviation threshold for Benford’s Law analysis. For critical applications, consider a more robust test (e.g., chi-squared).
-- **File Types**: Only `.txt`, `.png`, and `.jpg` files are supported. Other formats (e.g., `.pdf`) are not currently handled.
-- **Browser Performance**: Large images or text files may slow down processing due to client-side OCR and digit counting.
+- **OCR Accuracy**: Tesseract.js may struggle with handwritten text or low-resolution images despite preprocessing.
+- **Client-Side DCT**: Limited to JPEGs and small images due to browser constraints. Server-side API is recommended.
+- **Statistical Test**: Chi-squared test assumes sufficient data (≥100 numbers). Small datasets may be unreliable.
+- **File Types**: Only `.txt`, `.png`, and `.jpg` supported.
+- **Browser Performance**: Large files may slow processing.
 
 ## Future Improvements
-- Add support for PDF uploads or other image formats.
-- Implement image preprocessing (e.g., contrast enhancement) to improve OCR accuracy.
-- Include a chi-squared test for more precise Benford’s Law analysis.
-- Add an image preview feature to help users verify uploads.
-- Allow users to adjust OCR settings (e.g., language, thresholding).
+- Add PDF support.
+- Implement server-side DCT analysis by default.
+- Allow OCR language selection.
+- Add image preview for uploads.
+- Support two-digit Benford analysis.
 
 ## License
-This project is licensed under the MIT License. Feel free to use, modify, and distribute it as needed.
+MIT License. Use, modify, and distribute freely.
 
 ## Acknowledgments
-- Built with [Chart.js](https://www.chartjs.org/) for visualizations and [Tesseract.js](https://github.com/naptha/tesseract.js) for OCR.
-- Inspired by Benford’s Law applications in fraud detection and data analysis.
+- Built with [Chart.js](https://www.chartjs.org/), [Tesseract.js](https://github.com/naptha/tesseract.js), [OpenCV.js](https://opencv.org/), [jStat](https://jstat.github.io/), and [jpeg-js](https://github.com/eugeneware/jpeg-js).
+- Inspired by Benford’s Law applications in fraud detection and image forensics.
 
-If you have questions or need support, please open an issue or contact the developer.
+For support, open an issue or contact the developer.
