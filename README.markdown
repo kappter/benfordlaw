@@ -27,39 +27,39 @@ This applies to datasets spanning multiple orders of magnitude (e.g., stock pric
   - Text: Extracts numbers via OCR (images) or directly (text files).
   - Raw Image: Analyzes DCT coefficients from JPEGs (client-side limited; server-side recommended).
 - **OCR Enhancements**: Preprocesses images with OpenCV.js for better Tesseract.js accuracy.
-- **Live Tally**: Updates a bar chart in real-time as first digits are counted.
-- **Progress Bar**: Shows processing progress (0-100% for text, 0-50% for OCR, 50-100% for counting).
+- **Live Tally**: Updates a bar chart in real-time with throttled rendering for stability.
+- **Progress Bar**: Shows processing progress (0-100% for text, 0-50% for OCR/DCT, 50-100% for counting).
 - **Results Table**: Displays digit counts and percentages, excluding invalid numbers.
-- **Statistical Analysis**: Uses a chi-squared test to compare the first-digit distribution to Benford’s Law. A p-value < 0.05 flags potential anomalies.
-- **Dataset Validation**: Checks if numbers are suitable for Benford’s Law (e.g., span multiple orders of magnitude).
+- **Statistical Analysis**: Uses a chi-squared test (p-value < 0.05 flags anomalies).
+- **Dataset Validation**: Checks if numbers are suitable for Benford’s Law.
 - **User Guidance**: Includes a help section linking to advice on handling anomalies.
-- **Responsive Design**: User-friendly interface with clear feedback.
+- **Responsive Design**: Stable across browsers, including Chrome.
 
 ## What to Do If You Suspect Image Manipulation
 If the app flags a “Potential Anomaly” (p-value < 0.05), it may indicate manipulation. Follow these steps:
 
 1. **Verify the Input**:
-   - **Text Analysis**: Ensure the image is high-contrast and typed (not handwritten). Check the console for OCR-extracted text (`OCR extracted text: ...`) to verify accuracy. Re-upload or try a clearer image.
-   - **Raw Image Analysis**: Ensure the image is a JPEG. Client-side DCT analysis is limited; use the server-side API for better results.
+   - **Text Analysis**: Ensure the image is high-contrast and typed. Check the console for OCR-extracted text (`OCR extracted text: ...`).
+   - **Raw Image Analysis**: Ensure the image is a JPEG. Use the server-side API for accurate DCT analysis.
 2. **Compare with Original Data**:
-   - Obtain the original dataset (e.g., raw text file, another image copy) and re-analyze. Compare results for consistency.
+   - Analyze the original dataset (e.g., raw text, another image copy) and compare results.
    - Look for tampering signs (e.g., inconsistent fonts, pixel artifacts).
 3. **Test Multiple Samples**:
-   - Analyze other files from the same source. Consistent deviations strengthen suspicion.
+   - Analyze other files from the same source to confirm patterns.
 4. **Investigate Context**:
-   - Ensure the dataset is Benford-compliant (spans multiple orders of magnitude). Unsuitable data (e.g., fixed-length codes) may cause false positives.
+   - Ensure the dataset is Benford-compliant. Unsuitable data may cause false positives.
    - Verify the source’s trustworthiness.
 5. **Further Analysis**:
-   - Use forensic tools (e.g., FotoForensics, Forensically) for image manipulation checks.
-   - For critical data, consult a forensic accountant or data analyst for deeper statistical tests (e.g., Z-statistics).
+   - Use forensic tools (e.g., FotoForensics, Forensically).
+   - Consult a forensic accountant or data analyst for critical data.
 6. **Report Findings**:
-   - Document results (e.g., screenshot the chart and analysis) and share with stakeholders.
-   - Note that this app provides preliminary indicators, not definitive proof.
+   - Document results (e.g., screenshot the chart and analysis).
+   - Note that this app provides preliminary indicators, not proof.
 
 ## Getting Started
 ### Prerequisites
 - A modern web browser (e.g., Chrome, Firefox, Edge).
-- For raw image analysis, server-side processing requires Python, Flask, and `scipy` (see Server-Side Setup).
+- For raw image analysis, server-side processing requires Python, Flask, and `scipy`.
 
 ### Installation
 1. Clone or download the repository:
@@ -88,8 +88,7 @@ def analyze_dct():
     dct = scipy.fftpack.dct(scipy.fftpack.dct(img_array.T, norm='ortho').T, norm='ortho')
     coefficients = dct.flatten()
     numbers = [abs(c) for c in coefficients if abs(c) > 0]
-    return {'numbers': numbers[:1000]}  # Limit for performance
-
+    return {'numbers': numbers[:1000]}
 if __name__ == '__main__':
     app.run(debug=True)
 ```
@@ -97,42 +96,58 @@ Install dependencies:
 ```bash
 pip install flask pillow scipy numpy
 ```
-Run the server and update `script.js` to call the API (e.g., `fetch('http://localhost:5000/analyze_dct')`).
+Run the server and update `script.js` to call the API:
+```javascript
+function extractDCTCoefficients(file, callback) {
+    const formData = new FormData();
+    formData.append('image', file);
+    fetch('http://localhost:5000/analyze_dct', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => callback(data.numbers))
+    .catch(err => {
+        console.error('Server-side DCT failed:', err);
+        callback([]);
+    });
+}
+```
 
 ### Usage
 1. **Select Analysis Mode**:
-   - Choose “Text (OCR from Images)” for documents or “Raw Image (DCT Coefficients)” for JPEGs.
+   - Choose “Text (OCR from Images)” or “Raw Image (DCT Coefficients)”.
 2. **Upload a File**:
-   - Text files: Numbers separated by spaces (e.g., “123 456 789”).
-   - Images: Clear, typed text for OCR or JPEG for DCT.
+   - Text files: Numbers separated by spaces.
+   - Images: Clear text for OCR or JPEG for DCT.
 3. **Monitor Progress**:
-   - Text files: 0-100%.
+   - Text: 0-100%.
    - Images (Text): 0-50% for OCR, 50-100% for counting.
-   - Images (Raw): 0-50% for DCT extraction, 50-100% for counting.
+   - Images (Raw): 0-50% for DCT, 50-100% for counting.
 4. **Review Results**:
-   - Results table shows digit counts and percentages.
-   - Analysis indicates if the distribution is consistent (p-value ≥ 0.05) or anomalous (p-value < 0.05).
+   - Check the results table and analysis (p-value ≥ 0.05 for consistency).
 5. **Check Help**:
-   - Refer to the help section for guidance on anomalies.
+   - Refer to the help section for guidance.
 
 ### Testing
-- **Text File**: Upload a `.txt` with numbers (e.g., “123 45 678”). Verify chart and p-value.
-- **Image (Text)**: Use a clear image of numbers (e.g., a receipt). Check console for OCR text.
-- **Image (Raw)**: Upload a JPEG. Test with real vs. GAN-generated images if using server-side API.
+- **Text File**: Upload a `.txt` with numbers (e.g., “123 456.78 789”).
+- **Image (Text)**: Use a clear receipt image. Check OCR text in console.
+- **Image (Raw)**: Upload a JPEG (test real vs. GAN-generated with server-side API).
 - **Edge Cases**: Test empty files, non-numeric images, or low-quality JPEGs.
+- **Browser Stability**: Verify chart rendering in Chrome, Firefox, and Edge.
 
 ## Limitations
-- **OCR Accuracy**: Tesseract.js may struggle with handwritten text or low-resolution images despite preprocessing.
-- **Client-Side DCT**: Limited to JPEGs and small images due to browser constraints. Server-side API is recommended.
-- **Statistical Test**: Chi-squared test assumes sufficient data (≥100 numbers). Small datasets may be unreliable.
-- **File Types**: Only `.txt`, `.png`, and `.jpg` supported.
+- **OCR Accuracy**: Tesseract.js may struggle with handwritten or low-resolution images.
+- **Client-Side DCT**: Limited to JPEGs and small images. Use server-side API.
+- **Statistical Test**: Requires ≥100 numbers for reliability.
+- **File Types**: Only `.txt`, `.png`, `.jpg` supported.
 - **Browser Performance**: Large files may slow processing.
 
 ## Future Improvements
 - Add PDF support.
-- Implement server-side DCT analysis by default.
+- Implement server-side DCT by default.
 - Allow OCR language selection.
-- Add image preview for uploads.
+- Add image preview.
 - Support two-digit Benford analysis.
 
 ## License
