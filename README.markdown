@@ -66,6 +66,7 @@ If the app flags a “Potential Anomaly” (p-value < 0.05), it may indicate man
    - `index.html`
    - `styles.css`
    - `script.js`
+   - (Optional) `favicon.ico`
 2. Place files in the same directory.
 3. Open `index.html` in a browser.
 
@@ -131,10 +132,10 @@ function extractDCTCoefficients(file, callback) {
 
 ### Testing
 - **Text File**: Upload a `.txt` with numbers (e.g., “123 456.78 789”).
-- **Image (Text)**: Use a clear receipt image. Check OCR text in console.
-- **Image (Raw)**: Upload a JPEG (test real vs. GAN-generated with server-side API).
+- **Image (Text)**: Use a clear receipt image (e.g., `draw.jpg`). Check OCR text in console.
+- **Image (Raw)**: Upload a JPEG. Test with server-side API for accuracy.
 - **Edge Cases**: Test empty files, non-numeric images, or low-quality JPEGs.
-- **Browser Stability**: Verify chart rendering in Chrome, Firefox, and Edge.
+- **Browser Stability**: Verify chart rendering and file uploads in Chrome, Firefox, and Edge.
 
 ## Limitations
 - **OCR Accuracy**: Tesseract.js may struggle with handwritten or low-resolution images.
