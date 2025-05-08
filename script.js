@@ -24,6 +24,8 @@ function initializeChart() {
             }]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: true,
             scales: {
                 y: {
                     beginAtZero: true,
@@ -74,26 +76,31 @@ function isBenfordCompliant(numbers) {
     return min > 0 && max / min > 100;
 }
 
-// Count first digits with progress
+// Count first digits with throttled updates
 function countDigits(numbers) {
     const count = new Array(10).fill(0);
     let index = 0;
+    const batchSize = 100; // Process 100 numbers per frame
 
-    function processNextNumber() {
-        if (index < numbers.length) {
+    function processBatch() {
+        const end = Math.min(index + batchSize, numbers.length);
+        for (; index < end; index++) {
             const digit = firstDigitOf(numbers[index]);
             count[digit]++;
-            updateChart(count);
-            updateResults(count);
-            updateProgress((index + 1) / numbers.length * 100);
-            index++;
-            setTimeout(processNextNumber, 10);
+        }
+
+        updateChart(count);
+        updateResults(count);
+        updateProgress((index / numbers.length) * 100);
+
+        if (index < numbers.length) {
+            requestAnimationFrame(processBatch);
         } else {
             analyzeBenford(count, numbers);
         }
     }
 
-    processNextNumber();
+    requestAnimationFrame(processBatch);
     return count;
 }
 
@@ -188,7 +195,7 @@ function extractDCTCoefficients(file, callback) {
         const buffer = new Uint8Array(e.target.result);
         try {
             const decoded = jpeg.decode(buffer, { useTArray: true });
-            const coefficients = decoded.dctCoefficients || []; // Simplified; real DCT extraction is complex
+            const coefficients = decoded.dctCoefficients || [];
             const numbers = coefficients.filter(c => Math.abs(c) > 0).map(c => Math.abs(c));
             callback(numbers);
         } catch (err) {
@@ -214,6 +221,7 @@ fileInput.addEventListener('change', (event) => {
 
     const extension = file.name.toLowerCase().split('.').pop();
     const validText = file.type === 'text/plain' || extension === 'txt';
+방송국
     const validImage = ['image/png', 'image/jpeg', 'image/jpg'].includes(file.type) || ['png', 'jpg', 'jpeg'].includes(extension);
 
     if (validText) {
