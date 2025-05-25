@@ -1,7 +1,7 @@
 # Benford's Law Analyzer Web App
 
 ## Overview
-This web application analyzes text files (`.txt`) or images (`.png`, `.jpg`) to check if the distribution of first digits (1-9) follows **Benford's Law**, which can indicate data authenticity or potential manipulation. It supports three modes:
+[This web application](https://kappter.github.io/benfordlaw/) analyzes text files (`.txt`) or images (`.png`, `.jpg`) to check if the distribution of first digits (1-9) follows **Benford's Law**, which can indicate data authenticity or potential manipulation. It supports three modes:
 - **Text Analysis**: Uses Optical Character Recognition (OCR) via Tesseract.js to extract numbers from images (e.g., receipts, invoices) or processes text files directly.
 - **Raw Image Analysis**: Extracts Discrete Cosine Transform (DCT) coefficients from JPEG images to detect synthetic images (e.g., GAN-generated). Client-side analysis is limited; server-side processing is recommended.
 - **Pixel Value Analysis (Experimental)**: Analyzes the first digits of pixel RGB values (0–255). This mode is experimental, as pixel values may not reliably follow Benford’s Law.
